@@ -1,0 +1,55 @@
+// Without Signature
+
+| src/GarlicBulb.sol:GarlicBulb contract |                 |       |        |       |         |
+|----------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                        | Deployment Size |       |        |       |         |
+| 774437                                 | 4742            |       |        |       |         |
+| Function Name                          | min             | avg   | median | max   | # calls |
+| __GarlicBulb_init                      | 24491           | 24618 | 24618  | 24745 | 2       |
+| forwardCall                            | 12410           | 12410 | 12410  | 12410 | 1       |
+
+
+| src/GarlicPress.sol:GarlicPress contract |                 |       |        |       |         |
+|------------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                          | Deployment Size |       |        |       |         |
+| 211088                                   | 1230            |       |        |       |         |
+| Function Name                            | min             | avg   | median | max   | # calls |
+| cloneGarlicBulb                          | 90634           | 90634 | 90634  | 90634 | 1       |
+| isTrustedForwarder                       | 2552            | 2552  | 2552   | 2552  | 1       |
+
+
+| test/mocks/MockReceiverContract.sol:MockReceiverContract contract |                 |      |        |      |         |
+|-------------------------------------------------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost                                                   | Deployment Size |      |        |      |         |
+| 160039                                                            | 975             |      |        |      |         |
+| Function Name                                                     | min             | avg  | median | max  | # calls |
+| findTheSenderWithRevert                                           | 6020            | 6020 | 6020   | 6020 | 1       |
+
+// With Signature
+
+| src/GarlicBulb.sol:GarlicBulb contract |                 |       |        |       |         |
+|----------------------------------------|-----------------|-------|--------|-------|---------|
+| Deployment Cost                        | Deployment Size |       |        |       |         |
+| 774437                                 | 4742            |       |        |       |         |
+| Function Name                          | min             | avg   | median | max   | # calls |
+| APP_SIGNER_TYPEHASH                    | 218             | 218   | 218    | 218   | 1       |
+| __GarlicBulb_init                      | 24745           | 35695 | 35695  | 46645 | 2       |
+| domainSeparatorV4                      | 651             | 651   | 651    | 651   | 1       |
+| forwardCall                            | 16941           | 16941 | 16941  | 16941 | 1       |
+
+
+| src/GarlicPress.sol:GarlicPress contract |                 |        |        |        |         |
+|------------------------------------------|-----------------|--------|--------|--------|---------|
+| Deployment Cost                          | Deployment Size |        |        |        |         |
+| 211088                                   | 1230            |        |        |        |         |
+| Function Name                            | min             | avg    | median | max    | # calls |
+| cloneGarlicBulb                          | 112788          | 112788 | 112788 | 112788 | 1       |
+| isTrustedForwarder                       | 2552            | 2552   | 2552   | 2552   | 1       |
+
+
+| test/mocks/MockReceiverContract.sol:MockReceiverContract contract |                 |      |        |      |         |
+|-------------------------------------------------------------------|-----------------|------|--------|------|---------|
+| Deployment Cost                                                   | Deployment Size |      |        |      |         |
+| 160039                                                            | 975             |      |        |      |         |
+| Function Name                                                     | min             | avg  | median | max  | # calls |
+| findTheSenderWithRevert                                           | 6020            | 6020 | 6020   | 6020 | 1       |

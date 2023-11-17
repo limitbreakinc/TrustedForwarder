@@ -31,21 +31,34 @@ abstract contract GarlicERC2771Context is Context {
     }
 
     function _msgSender() internal view virtual override returns (address sender) {
-        if (_garlicPress.isTrustedForwarder(msg.sender) && msg.data.length >= 20) {
-            // The assembly code is more direct than the Solidity version using `abi.decode`.
-            /// @solidity memory-safe-assembly
-            assembly {
-                sender := shr(96, calldataload(sub(calldatasize(), 20)))
+        if (_garlicPress.isTrustedForwarder(msg.sender)) {
+            if (msg.data.length >= 20) {
+                // The assembly code is more direct than the Solidity version using `abi.decode`.
+                /// @solidity memory-safe-assembly
+                assembly {
+                    sender := shr(96, calldataload(sub(calldatasize(), 20)))
+                }
+            } else {
+                return super._msgSender();
             }
         } else {
             return super._msgSender();
         }
     }
 
-    function _msgData() internal view virtual override returns (bytes calldata) {
-        if (_garlicPress.isTrustedForwarder(msg.sender) && msg.data.length >= 20) {
-            unchecked {
-                return msg.data[:msg.data.length - 20];
+    function _msgData() internal view virtual override returns (bytes calldata data) {
+        if (_garlicPress.isTrustedForwarder(msg.sender)) {
+            assembly {
+                // Get length of current calldata
+                let len := calldatasize()
+                // Create a slice that defaults to the entire calldata
+                data.offset := 0
+                data.length := len
+                // If the calldata is > 20 bytes, it contains the sender address at the end
+                // and needs to be truncated
+                if gt(len, 0x14) {
+                    data.length := sub(len, 0x14)
+                }
             }
         } else {
             return super._msgData();
