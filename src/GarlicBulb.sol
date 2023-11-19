@@ -16,6 +16,7 @@ import "forge-std/console.sol";
 contract GarlicBulb is EIP712, Initializable, Ownable {
     error GarlicBulb__CannotSetAppSignerToZeroAddress();
     error GarlicBulb__CannotSetOwnerToZeroAddress();
+    error GarlicBulb__CannotUseWithoutSignature();
     error GarlicBulb__ExternalContractCallReverted(bytes returnData);
     error GarlicBulb__InvalidSignature();
     error GarlicBulb__OnlyOwner();
@@ -86,21 +87,29 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
             }
         }
 
-        // TODO: Move call to assembly and handle the return data / revert 
-        bool success;
-        (success, returnData) = target.call{value: msg.value}(_encodeERC2771Context(message, _msgSender()));
-        if (success) {
-            if (returnData.length == 0) {
-                uint256 targetCodeLength;
-                assembly {
-                    targetCodeLength := extcodesize(target)
-                }
-                if (targetCodeLength == 0) {
-                    revert GarlicBulb__TargetAddressHasNoCode();
+        bytes memory encodedData = _encodeERC2771Context(message, _msgSender());
+        assembly {
+            let success := call(gas(), target, callvalue(), add(encodedData, 0x20), mload(encodedData), 0, 0)
+            let size := returndatasize()
+
+            returnData := mload(0x40)
+            mstore(returnData, size)
+            mstore(0x40, add(add(returnData, 0x20), size)) // Adjust memory pointer
+            returndatacopy(add(returnData, 0x20), 0, size)
+
+            if iszero(success) {
+                // Revert with return data on failure
+                revert(add(returnData, 0x20), size)
+            }
+
+            // If the call was successful, but the return data is empty, check if the target address has code
+            if iszero(size) {
+                if iszero(extcodesize(target)) {
+                    // Store function selector `GarlicBulb__TargetAddressHasNoCode()` and revert
+                    mstore(0x00, 0xdceae7d6)
+                    revert(0x1c, 0x04)
                 }
             }
-        } else {
-            revert GarlicBulb__ExternalContractCallReverted(returnData);
         }
     }
 
@@ -125,23 +134,32 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
     {
         address signerCache = signer;
         if (signerCache != address(0)) {
-            revert();
+            revert GarlicBulb__CannotUseWithoutSignature();
         }
 
-        bool success;
-        (success, returnData) = target.call{value: msg.value}(_encodeERC2771Context(message, msg.sender));
-        if (success) {
-            if (returnData.length == 0) {
-                uint256 targetCodeLength;
-                assembly {
-                    targetCodeLength := extcodesize(target)
-                }
-                if (targetCodeLength == 0) {
-                    revert GarlicBulb__TargetAddressHasNoCode();
+        bytes memory encodedData = _encodeERC2771Context(message, _msgSender());
+        assembly {
+            let success := call(gas(), target, callvalue(), add(encodedData, 0x20), mload(encodedData), 0, 0)
+            let size := returndatasize()
+
+            returnData := mload(0x40)
+            mstore(returnData, size)
+            mstore(0x40, add(add(returnData, 0x20), size)) // Adjust memory pointer
+            returndatacopy(add(returnData, 0x20), 0, size)
+
+            if iszero(success) {
+                // Revert with return data on failure
+                revert(add(returnData, 0x20), size)
+            }
+
+            // If the call was successful, but the return data is empty, check if the target address has code
+            if iszero(size) {
+                if iszero(extcodesize(target)) {
+                    // Store function selector `GarlicBulb__TargetAddressHasNoCode()` and revert
+                    mstore(0x00, 0xdceae7d6)
+                    revert(0x1c, 0x04)
                 }
             }
-        } else {
-            revert GarlicBulb__ExternalContractCallReverted(returnData);
         }
     }
 
@@ -184,8 +202,6 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
             // Append the `address`. Addresses are 20 bytes, stored in the last 20 bytes of a 32-byte word
             mstore(add(add(encodedData, 0x20), _data.length), shl(96, _msgSender))
         }
-        //TODO: REMOVE THIS BEFORE PROD - THIS IS FOR TESTING ONLY
-        // require(keccak256(encodedData) == keccak256(abi.encodePacked(_data, _msgSender)), "GarlicBulb: encoded data does not match expected value");
     }
 
     /**
@@ -217,56 +233,3 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
         _transferOwnership(address(0xdead));
     }
 }
-
-
-
-//     function _pushProceeds(address to, uint256 proceeds, uint256 pushPaymentGasLimit_) internal {
-    //     bool success;
-
-    //     assembly {
-    //         // Transfer the ETH and store if it succeeded or not.
-    //         success := call(pushPaymentGasLimit_, to, proceeds, 0, 0, 0, 0)
-    //     }
-
-    //     if (!success) {
-    //         revert cPort__FailedToTransferProceeds();
-    //     }
-    // }
-
-    //     modifier delegateCall(address module, bytes4 selector, bytes calldata data) {
-    //     assembly {
-    //         let ptr := mload(0x40)
-    //         mstore(ptr, selector)
-    //         calldatacopy(add(ptr,0x04), data.offset, data.length)
-    //         mstore(0x40, add(ptr,add(0x04, data.length)))
-
-    //         let result := delegatecall(gas(), module, ptr, add(data.length, 4), 0, 0)
-    //         if iszero(result) {
-    //             // Call has failed, retrieve the error message and revert
-    //             let size := returndatasize()
-    //             returndatacopy(0, 0, size)
-    //             revert(0, size)
-    //         }
-    //     }        
-    //     _;
-    // }
-
-    //     function createPaymentMethodWhitelist(bytes calldata data) external returns (uint32 paymentMethodWhitelistId) {
-    //     address module = _modulePaymentSettings;
-    //     assembly {
-    //         let ptr := mload(0x40)
-    //         mstore(ptr, hex"f83116c9")
-    //         calldatacopy(add(ptr, 0x04), data.offset, data.length)
-    //         mstore(0x40, add(ptr, add(0x04, data.length)))
-
-    //         let result := delegatecall(gas(), module, ptr, add(data.length, 4), 0x00, 0x20)
-
-    //         switch result case 0 {
-    //             let size := returndatasize()
-    //             returndatacopy(0, 0, size)
-    //             revert(0, size)
-    //         } default {
-    //             return (0x00, 0x20)
-    //         }
-    //     }
-    // }

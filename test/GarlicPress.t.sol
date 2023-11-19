@@ -110,7 +110,20 @@ contract GarlicPressTest is BaseTest {
         bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, address(this));
 
         vm.startPrank(sender);
-        vm.expectRevert(abi.encodeWithSelector(GarlicBulb.GarlicBulb__ExternalContractCallReverted.selector, abi.encodeWithSelector(bytes4(keccak256("Error(string)")), bytes("MockReceiverContract__SenderDoesNotMatch"))));
+        vm.expectRevert("MockReceiverContract__SenderDoesNotMatch");
         GarlicBulb(garlicBulb).forwardCall(address(mockReceiver), message, GarlicBulb.SignatureECDSA(0, bytes32(0), bytes32(0)));
+    }
+
+    function testForwardCall_getData_largeDataReturn() public {
+        bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
+        address garlicBulb = garlicPress.cloneGarlicBulb(address(this), address(0), salt);
+
+        MockReceiverContract mockReceiver = new MockReceiverContract(address(garlicPress));
+
+        bytes memory message = abi.encodeWithSelector(mockReceiver.getSomeLargeData.selector);
+
+        bytes memory retVal = GarlicBulb(garlicBulb).forwardCall(address(mockReceiver), message, GarlicBulb.SignatureECDSA(0, bytes32(0), bytes32(0)));
+        string memory decodedVal = abi.decode(retVal, (string));
+        console.log(decodedVal);
     }
 }

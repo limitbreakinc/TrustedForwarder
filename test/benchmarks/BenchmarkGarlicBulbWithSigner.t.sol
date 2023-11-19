@@ -43,14 +43,8 @@ contract BenchmarkGarlicBulbWithSigner is BaseTest {
         );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerKey, digest);
 
-        address clone2 = garlicPress.cloneGarlicBulb(address(this), signer, bytes32(uint256(keccak256(abi.encodePacked(address(2), address(this))))));
-        GarlicBulb garlicBulb2 = GarlicBulb(clone2);
-
-        console.logBytes32(garlicBulb.domainSeparatorV4());
-        console.logBytes32(garlicBulb2.domainSeparatorV4());
-        console.logBytes32(GarlicBulb(garlicBulbImplementation).domainSeparatorV4());
-
         vm.prank(sender);
         garlicBulb.forwardCall(address(mockReceiver), message, GarlicBulb.SignatureECDSA(v, r, s));
+        // revert();
     }
 }
