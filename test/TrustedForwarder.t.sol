@@ -30,6 +30,11 @@ contract TrustedForwarderTest is BaseTest {
         forwarder.updateSigner(signer);
     }
 
+    function testUpdateSigner_ZeroAddress() public {
+        vm.expectRevert(TrustedForwarder.TrustedForwarder__CannotSetAppSignerToZeroAddress.selector);
+        forwarder.updateSigner(address(0));
+    }
+
     function testTransferOwnership_NonOwner(address badActor) public {
         vm.assume(badActor != forwarder.owner());
         vm.prank(badActor);
@@ -59,6 +64,34 @@ contract TrustedForwarderTest is BaseTest {
 
         vm.expectRevert(TrustedForwarder.TrustedForwarder__CannotUseWithoutSignature.selector);
         forwarder.forwardCall(address(mockReceiver), abi.encodeWithSelector(mockReceiver.noReturnData.selector));
+    }
+
+    function testForwardCall_InvalidSigner(address sender) public {
+        vm.deal(sender, 1 ether);
+        (, uint256 badKey) = makeAddrAndKey("badActor");
+        forwarder.updateSigner(signer);
+
+        bytes memory message = abi.encodeWithSelector(mockReceiver.getSomeLargeData_Payable.selector);
+
+        forwarder.updateSigner(signer);
+
+        bytes32 digest = ECDSA.toTypedDataHash(
+            forwarder.domainSeparatorV4(),
+            keccak256(
+                abi.encode(
+                    forwarder.APP_SIGNER_TYPEHASH(),
+                    keccak256(message),
+                    address(mockReceiver),
+                    sender
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(badKey, digest);
+
+        vm.prank(sender);
+        vm.expectRevert(TrustedForwarder.TrustedForwarder__SignerNotAuthorized.selector);
+        forwarder.forwardCall{value: 1 ether}(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(v, r, s));
+
     }
 
     // ===================== EOA RECEIVER CHECKS =====================
