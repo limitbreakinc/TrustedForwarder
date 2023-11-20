@@ -5,23 +5,22 @@ import "@openzeppelin//contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "forge-std/console.sol";
 
 /**
- * @title  GarlicBulb
+ * @title  TrustedForwarder
  * @author Limit Break, Inc.
- * @notice GarlicBulb is a generic message forwarder, which allows you to relay transactions to any contract and preserve the original sender.
+ * @notice TrustedForwarder is a generic message forwarder, which allows you to relay transactions to any contract and preserve the original sender.
  *         The processor acts as a trusted proxy, which can be a way to limit interactions with your contract, or enforce certain conditions.
  */
-contract GarlicBulb is EIP712, Initializable, Ownable {
-    error GarlicBulb__CannotSetAppSignerToZeroAddress();
-    error GarlicBulb__CannotSetOwnerToZeroAddress();
-    error GarlicBulb__CannotUseWithoutSignature();
-    error GarlicBulb__ExternalContractCallReverted(bytes returnData);
-    error GarlicBulb__InvalidSignature();
-    error GarlicBulb__OnlyOwner();
-    error GarlicBulb__SignerNotAuthorized();
-    error GarlicBulb__TargetAddressHasNoCode();
+contract TrustedForwarder is EIP712, Initializable, Ownable {
+    error TrustedForwarder__CannotSetAppSignerToZeroAddress();
+    error TrustedForwarder__CannotSetOwnerToZeroAddress();
+    error TrustedForwarder__CannotUseWithoutSignature();
+    error TrustedForwarder__ExternalContractCallReverted(bytes returnData);
+    error TrustedForwarder__InvalidSignature();
+    error TrustedForwarder__OnlyOwner();
+    error TrustedForwarder__SignerNotAuthorized();
+    error TrustedForwarder__TargetAddressHasNoCode();
 
     struct SignatureECDSA {
         uint8 v;
@@ -33,10 +32,10 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
     bytes32 public constant APP_SIGNER_TYPEHASH = 0xc83d02443cc9e12c5d2faae8a9a36bf0112f5b4a8cce23c9277a0c68bf638762;
     address public signer;
 
-    constructor() EIP712("GarlicBulb", "1") {}
+    constructor() EIP712("TrustedForwarder", "1") {}
 
     /**
-     * @notice Initializes the GarlicBulb contract.
+     * @notice Initializes the TrustedForwarder contract.
      *
      * @dev    This should be called atomically with the clone of the contract to prevent bad actors from calling it.
      * @dev    - Throws if the contract is already initialized
@@ -44,7 +43,7 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
      * @param owner           The address to assign the owner role to.
      * @param appSigner       The address to assign the app signer role to. This will be ignored if `enableAppSigner` is false.
      */
-    function __GarlicBulb_init(address owner, address appSigner) external initializer {
+    function __TrustedForwarder_init(address owner, address appSigner) external initializer {
         if (appSigner != address(0)) {
             signer = appSigner;
         }
@@ -83,7 +82,7 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
                         signature.s
                     )
             ) {
-                revert GarlicBulb__SignerNotAuthorized();
+                revert TrustedForwarder__SignerNotAuthorized();
             }
         }
 
@@ -105,8 +104,8 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
             // If the call was successful, but the return data is empty, check if the target address has code
             if iszero(size) {
                 if iszero(extcodesize(target)) {
-                    // Store function selector `GarlicBulb__TargetAddressHasNoCode()` and revert
-                    mstore(0x00, 0xdceae7d6)
+                    // Store function selector `TrustedForwarder__TargetAddressHasNoCode()` and revert
+                    mstore(0x00, 0x39bf07c1)
                     revert(0x1c, 0x04)
                 }
             }
@@ -134,7 +133,7 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
     {
         address signerCache = signer;
         if (signerCache != address(0)) {
-            revert GarlicBulb__CannotUseWithoutSignature();
+            revert TrustedForwarder__CannotUseWithoutSignature();
         }
 
         bytes memory encodedData = _encodeERC2771Context(message, _msgSender());
@@ -155,8 +154,8 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
             // If the call was successful, but the return data is empty, check if the target address has code
             if iszero(size) {
                 if iszero(extcodesize(target)) {
-                    // Store function selector `GarlicBulb__TargetAddressHasNoCode()` and revert
-                    mstore(0x00, 0xdceae7d6)
+                    // Store function selector `TrustedForwarder__TargetAddressHasNoCode()` and revert
+                    mstore(0x00, 0x39bf07c1)
                     revert(0x1c, 0x04)
                 }
             }
@@ -218,12 +217,12 @@ contract GarlicBulb is EIP712, Initializable, Ownable {
      */
     function _ecdsaRecover(bytes32 digest, uint8 v, bytes32 r, bytes32 s) internal pure returns (address recoveredSigner) {
         if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
-            revert GarlicBulb__InvalidSignature();
+            revert TrustedForwarder__InvalidSignature();
         }
 
         recoveredSigner = ecrecover(digest, v, r, s);
         if (recoveredSigner == address(0)) {
-            revert GarlicBulb__InvalidSignature();
+            revert TrustedForwarder__InvalidSignature();
         }
     }
 

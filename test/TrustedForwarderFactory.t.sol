@@ -3,23 +3,23 @@ pragma solidity <=0.8.9;
 
 import "forge-std/console.sol";
 import {BaseTest} from "./TestBase.t.sol";
-import {GarlicPress} from "../src/GarlicPress.sol"; 
-import {GarlicBulb} from "../src/GarlicBulb.sol";
+import {TrustedForwarderFactory} from "../src/TrustedForwarderFactory.sol"; 
+import {TrustedForwarder} from "../src/TrustedForwarder.sol";
 import {MockReceiverContract} from "./mocks/MockReceiverContract.sol";
 
-contract GarlicPressTest is BaseTest {
-    GarlicPress public garlicPress;
-    address public garlicBulbImplementation;
+contract TrustedForwarderFactoryTest is BaseTest {
+    TrustedForwarderFactory public factory;
+    address public trustedForwarderImplementation;
 
     function setUp() public override {
-        garlicBulbImplementation = address(new GarlicBulb());
-        GarlicBulb(garlicBulbImplementation).__GarlicBulb_init(address(this), address(this));
+        trustedForwarderImplementation = address(new TrustedForwarder());
+        TrustedForwarder(trustedForwarderImplementation).__TrustedForwarder_init(address(this), address(this));
 
-        garlicPress = new GarlicPress(garlicBulbImplementation);
+        factory = new TrustedForwarderFactory(trustedForwarderImplementation);
     }
 
     function testDeployment() public {
-        assertEq(address(garlicPress.garlicBulbImplementation()), garlicBulbImplementation);
+        assertEq(address(factory.trustedForwarderImplementation()), trustedForwarderImplementation);
     }
 
     function testClone_appSignerAssigned(address signer, address badAddress) public {
@@ -27,27 +27,27 @@ contract GarlicPressTest is BaseTest {
         assumeAddressNotBadAddress(signer);
         assumeAddressNotBadAddress(badAddress);
         bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-        address garlicBulb = garlicPress.cloneGarlicBulb(address(this), address(this), salt);
-        assertEq(GarlicBulb(garlicBulb).signer(), address(this));
-        assertEq(GarlicBulb(garlicBulb).owner(), address(this));
+        address forwarder = factory.cloneTrustedForwarder(address(this), address(this), salt);
+        assertEq(TrustedForwarder(forwarder).signer(), address(this));
+        assertEq(TrustedForwarder(forwarder).owner(), address(this));
         
-        assertEq(GarlicBulb(garlicBulb).signer(), address(this));
-        assert(GarlicBulb(garlicBulb).signer() != badAddress);
+        assertEq(TrustedForwarder(forwarder).signer(), address(this));
+        assert(TrustedForwarder(forwarder).signer() != badAddress);
     }
 
     function testCloneAndReinitialize(address badAddress) public {
         vm.assume(badAddress != address(this));
         bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-        address garlicBulb = garlicPress.cloneGarlicBulb(address(this), address(this), salt);
+        address forwarder = factory.cloneTrustedForwarder(address(this), address(this), salt);
 
-        address signerAddress = GarlicBulb(garlicBulb).signer();
+        address signerAddress = TrustedForwarder(forwarder).signer();
         
         assertEq(signerAddress, address(this));
 
         vm.expectRevert("Initializable: contract is already initialized");
-        GarlicBulb(garlicBulb).__GarlicBulb_init(badAddress, badAddress);
+        TrustedForwarder(forwarder).__TrustedForwarder_init(badAddress, badAddress);
 
-        signerAddress = GarlicBulb(garlicBulb).signer();
+        signerAddress = TrustedForwarder(forwarder).signer();
 
         assertEq(signerAddress, address(this));
     }
@@ -55,47 +55,47 @@ contract GarlicPressTest is BaseTest {
     function testForwardCall_base_revert_withSig(address sender) public {
         vm.assume(sender != address(this) && sender != address(0));
         bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-        address garlicBulb = garlicPress.cloneGarlicBulb(address(this), address(0), salt);
+        address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
 
-        MockReceiverContract mockReceiver = new MockReceiverContract(address(garlicPress));
+        MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
 
         bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, sender);
 
         vm.startPrank(sender);
-        GarlicBulb(garlicBulb).forwardCall(address(mockReceiver), message, GarlicBulb.SignatureECDSA(0, bytes32(0), bytes32(0)));
+        TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
     }
 
     function testForwardCall_base_revert_noSig(address sender) public {
         vm.assume(sender != address(this) && sender != address(0));
         bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-        address garlicBulb = garlicPress.cloneGarlicBulb(address(this), address(0), salt);
+        address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
 
-        MockReceiverContract mockReceiver = new MockReceiverContract(address(garlicPress));
+        MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
 
         bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, sender);
         vm.deal(sender, 1 ether);
 
         vm.startPrank(sender);
-        GarlicBulb(garlicBulb).forwardCall(address(mockReceiver), message);
+        TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message);
     }
 
     function testForwardCall_base_return(address sender) public {
         vm.assume(sender != address(this) && sender != address(0));
         bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-        address garlicBulb = garlicPress.cloneGarlicBulb(address(this), address(0), salt);
+        address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
 
-        MockReceiverContract mockReceiver = new MockReceiverContract(address(garlicPress));
+        MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
 
         bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithReturnValue.selector, sender);
 
         vm.startPrank(sender);
-        bytes memory retVal = GarlicBulb(garlicBulb).forwardCall(address(mockReceiver), message, GarlicBulb.SignatureECDSA(0, bytes32(0), bytes32(0)));
+        bytes memory retVal = TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
 
         assertEq(abi.decode(retVal, (bool)), true);
 
         vm.stopPrank();
 
-        retVal = GarlicBulb(garlicBulb).forwardCall(address(mockReceiver), message, GarlicBulb.SignatureECDSA(0, bytes32(0), bytes32(0)));
+        retVal = TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
 
         assertEq(abi.decode(retVal, (bool)), false);
     }
@@ -103,26 +103,26 @@ contract GarlicPressTest is BaseTest {
     function testForwardCall_nonMatchingSender_revert(address sender) public {
         vm.assume(sender != address(this) && sender != address(0));
         bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-        address garlicBulb = garlicPress.cloneGarlicBulb(address(this), address(0), salt);
+        address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
 
-        MockReceiverContract mockReceiver = new MockReceiverContract(address(garlicPress));
+        MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
 
         bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, address(this));
 
         vm.startPrank(sender);
         vm.expectRevert("MockReceiverContract__SenderDoesNotMatch");
-        GarlicBulb(garlicBulb).forwardCall(address(mockReceiver), message, GarlicBulb.SignatureECDSA(0, bytes32(0), bytes32(0)));
+        TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
     }
 
     function testForwardCall_getData_largeDataReturn() public {
         bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-        address garlicBulb = garlicPress.cloneGarlicBulb(address(this), address(0), salt);
+        address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
 
-        MockReceiverContract mockReceiver = new MockReceiverContract(address(garlicPress));
+        MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
 
         bytes memory message = abi.encodeWithSelector(mockReceiver.getSomeLargeData.selector);
 
-        bytes memory retVal = GarlicBulb(garlicBulb).forwardCall(address(mockReceiver), message, GarlicBulb.SignatureECDSA(0, bytes32(0), bytes32(0)));
+        bytes memory retVal = TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
         string memory decodedVal = abi.decode(retVal, (string));
         console.log(decodedVal);
     }
