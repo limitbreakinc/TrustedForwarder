@@ -5,8 +5,18 @@ import 'forge-std/StdCheats.sol';
 import 'forge-std/StdAssertions.sol';
 import 'forge-std/StdUtils.sol';
 import {TestBase} from 'forge-std/Base.sol';
+import {TrustedForwarderFactory} from "src/TrustedForwarderFactory.sol"; 
+import {TrustedForwarder} from "src/TrustedForwarder.sol";
+import {MockReceiverContract} from "./mocks/MockReceiverContract.sol";
 
 contract BaseTest is TestBase, StdAssertions, StdCheats, StdUtils {
+
+    event TrustedForwarderCreated(address indexed trustedForwarder);
+
+    TrustedForwarderFactory public factory;
+    address public forwarderImplementation;
+    TrustedForwarder public forwarder;
+    MockReceiverContract public mockReceiver;
 
     uint256 adminKey;
     uint256 aliceKey;

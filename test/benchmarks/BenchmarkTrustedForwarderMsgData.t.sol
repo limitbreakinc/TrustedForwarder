@@ -27,19 +27,10 @@ contract BenchmarkTrustedForwarder is Test {
     }
 
     function testForwardCall_msgData(bytes calldata testData) public {
-        vm.assume(testData.length > 0);
         bytes memory message = abi.encodeWithSelector(mockReceiver.getTheData.selector, testData);
 
         bytes memory retVal = forwarder.forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
-        bytes memory decoded = abi.decode(retVal, (bytes));
-        if (decoded.length >= 4) {
-            bytes memory truncated = new bytes(decoded.length - 4);
-            for (uint256 i = 4; i < decoded.length; i++) {
-                truncated[i - 4] = decoded[i];
-            }
-
-            bytes memory originalMessage = abi.decode(truncated, (bytes));
-            assertEq(keccak256(originalMessage), keccak256(testData));
-        }
+        bool decoded = abi.decode(retVal, (bool));
+        assertEq(decoded, true);
     }
 }

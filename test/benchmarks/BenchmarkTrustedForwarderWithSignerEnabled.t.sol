@@ -9,10 +9,6 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "forge-std/console.sol";
 
 contract BenchmarkTrustedForwarderWithSigner is BaseTest {
-    TrustedForwarderFactory public factory;
-    address public forwarderImplementation;
-    TrustedForwarder public forwarder;
-    MockReceiverContract public mockReceiver;
 
     function setUp() public override {
         super.setUp();

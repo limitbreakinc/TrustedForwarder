@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity <=0.8.9;
 
 import "forge-std/console.sol";
@@ -6,23 +6,19 @@ import {BaseTest} from "./TestBase.t.sol";
 import {TrustedForwarderFactory} from "../src/TrustedForwarderFactory.sol"; 
 import {TrustedForwarder} from "../src/TrustedForwarder.sol";
 import {MockReceiverContract} from "./mocks/MockReceiverContract.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract TrustedForwarderFactoryTest is BaseTest {
 
-    event TrustedForwarderCreated(address indexed trustedForwarder);
-
-    TrustedForwarderFactory public factory;
-    address public trustedForwarderImplementation;
-
     function setUp() public override {
-        trustedForwarderImplementation = address(new TrustedForwarder());
-        TrustedForwarder(trustedForwarderImplementation).__TrustedForwarder_init(address(this), address(this));
+        forwarderImplementation = address(new TrustedForwarder());
+        TrustedForwarder(forwarderImplementation).__TrustedForwarder_init(address(this), address(this));
 
-        factory = new TrustedForwarderFactory(trustedForwarderImplementation);
+        factory = new TrustedForwarderFactory(forwarderImplementation);
     }
 
     function testDeployment() public {
-        assertEq(address(factory.trustedForwarderImplementation()), trustedForwarderImplementation);
+        assertEq(address(factory.trustedForwarderImplementation()), forwarderImplementation);
     }
 
     function testClone_EventEmitted(bytes32 salt) public {
@@ -125,79 +121,4 @@ contract TrustedForwarderFactoryTest is BaseTest {
         assertEq(factory.isTrustedForwarder(forwarder), true);
         assertEq(predicted, forwarder);
     }
-
-    // function testForwardCall_base_revert_withSig(address sender) public {
-    //     vm.assume(sender != address(this) && sender != address(0));
-    //     bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-    //     address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
-
-    //     MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
-
-    //     bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, sender);
-
-    //     vm.startPrank(sender);
-    //     TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
-    // }
-
-    // function testForwardCall_base_revert_noSig(address sender) public {
-    //     vm.assume(sender != address(this) && sender != address(0));
-    //     bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-    //     address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
-
-    //     MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
-
-    //     bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, sender);
-    //     vm.deal(sender, 1 ether);
-
-    //     vm.startPrank(sender);
-    //     TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message);
-    // }
-
-    // function testForwardCall_base_return(address sender) public {
-    //     vm.assume(sender != address(this) && sender != address(0));
-    //     bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-    //     address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
-
-    //     MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
-
-    //     bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithReturnValue.selector, sender);
-
-    //     vm.startPrank(sender);
-    //     bytes memory retVal = TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
-
-    //     assertEq(abi.decode(retVal, (bool)), true);
-
-    //     vm.stopPrank();
-
-    //     retVal = TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
-
-    //     assertEq(abi.decode(retVal, (bool)), false);
-    // }
-
-    // function testForwardCall_nonMatchingSender_revert(address sender) public {
-    //     vm.assume(sender != address(this) && sender != address(0));
-    //     bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-    //     address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
-
-    //     MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
-
-    //     bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, address(this));
-
-    //     vm.startPrank(sender);
-    //     vm.expectRevert("MockReceiverContract__SenderDoesNotMatch");
-    //     TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
-    // }
-
-    // function testForwardCall_getData_largeDataReturn() public {
-    //     bytes32 salt = bytes32(uint256(keccak256(abi.encodePacked(address(this), address(this)))));
-    //     address forwarder = factory.cloneTrustedForwarder(address(this), address(0), salt);
-
-    //     MockReceiverContract mockReceiver = new MockReceiverContract(address(factory));
-
-    //     bytes memory message = abi.encodeWithSelector(mockReceiver.getSomeLargeData.selector);
-
-    //     bytes memory retVal = TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
-    //     string memory decodedVal = abi.decode(retVal, (string));
-    //     console.log(decodedVal);
-    // }
 }
