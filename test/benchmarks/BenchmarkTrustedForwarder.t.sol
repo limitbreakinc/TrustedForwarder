@@ -32,9 +32,6 @@ contract BenchmarkTrustedForwarder is Test {
         bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, sender);
 
         vm.prank(sender);
-        forwarder.forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(0, bytes32(0), bytes32(0)));
+        forwarder.forwardCall(address(mockReceiver), message);
     }
-
-
-
 }

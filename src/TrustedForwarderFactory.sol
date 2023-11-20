@@ -39,9 +39,9 @@ contract TrustedForwarderFactory {
      * @dev    This prevents the mining of specific contract addresses for deterministic deployments, but still allows for
      * @dev    a canonical address to be created for each sender.
      *
-     * @param admin           The address to assign the admin role to.
-     * @param appSigner       The address to assign the app signer role to. This will be ignored if `enableAppSigner` is false.
-     * @param salt            The salt to use for the deterministic deployment.  This is hashed with the sender's address to create the final salt.
+     * @param admin             The address to assign the admin role to.
+     * @param appSigner         The address to assign the app signer role to. This will be ignored if `enableAppSigner` is false.
+     * @param salt              The salt to use for the deterministic deployment.  This is hashed with the sender's address to create the final salt.
      *
      * @return trustedForwarder The address of the newly created TrustedForwarder contract.
      */

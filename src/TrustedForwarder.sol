@@ -16,11 +16,8 @@ contract TrustedForwarder is EIP712, Initializable, Ownable {
     error TrustedForwarder__CannotSetAppSignerToZeroAddress();
     error TrustedForwarder__CannotSetOwnerToZeroAddress();
     error TrustedForwarder__CannotUseWithoutSignature();
-    error TrustedForwarder__ExternalContractCallReverted(bytes returnData);
     error TrustedForwarder__InvalidSignature();
-    error TrustedForwarder__OnlyOwner();
     error TrustedForwarder__SignerNotAuthorized();
-    error TrustedForwarder__TargetAddressHasNoCode();
 
     struct SignatureECDSA {
         uint8 v;
@@ -41,23 +38,74 @@ contract TrustedForwarder is EIP712, Initializable, Ownable {
      * @dev    - Throws if the contract is already initialized
      *
      * @param owner           The address to assign the owner role to.
-     * @param appSigner       The address to assign the app signer role to. This will be ignored if `enableAppSigner` is false.
+     * @param appSigner       The address to assign the app signer role to.
      */
     function __TrustedForwarder_init(address owner, address appSigner) external initializer {
+        if (owner == address(0)) {
+            revert TrustedForwarder__CannotSetOwnerToZeroAddress();
+        }
         if (appSigner != address(0)) {
             signer = appSigner;
         }
         _transferOwnership(owner);
     }
 
-
     /**
      * @notice Forwards a message to a target contract, preserving the original sender.
-     * @notice If `appSignerEnabled` is true, the call must include a signature from an address with the app signer role.
+     * @notice In the case the forwarder does not require a signature, this function should be used to save gas.
      *
      * @dev    - Throws if the target contract reverts.
      * @dev    - Throws if the target address has no code.
-     * @dev    - Throws if `appSignerEnabled` is true and the signed message does not
+     * @dev    - Throws if `signer` is not address(0).
+     *
+     * @param target    The address of the contract to forward the message to.
+     * @param message   The calldata to forward.
+     *
+     * @return returnData The return data of the call to the target contract.
+     */
+    function forwardCall(address target, bytes calldata message)
+        external
+        payable
+        returns (bytes memory returnData)
+    {
+        address signerCache = signer;
+        if (signerCache != address(0)) {
+            revert TrustedForwarder__CannotUseWithoutSignature();
+        }
+
+        bytes memory encodedData = _encodeERC2771Context(message, _msgSender());
+        assembly {
+            let success := call(gas(), target, callvalue(), add(encodedData, 0x20), mload(encodedData), 0, 0)
+            let size := returndatasize()
+
+            returnData := mload(0x40)
+            mstore(returnData, size)
+            mstore(0x40, add(add(returnData, 0x20), size)) // Adjust memory pointer
+            returndatacopy(add(returnData, 0x20), 0, size) // Copy returndata to memory
+
+            if iszero(success) {
+                revert(add(returnData, 0x20), size) // Revert with return data on failure
+            }
+
+            // If the call was successful, but the return data is empty, check if the target address has code
+            if iszero(size) {
+                if iszero(extcodesize(target)) {
+                    mstore(0x00, 0x39bf07c1) // Store function selector `TrustedForwarder__TargetAddressHasNoCode()` and revert
+                    revert(0x1c, 0x04) // Revert with the custom function selector
+                }
+            }
+        }
+    }
+
+
+    /**
+     * @notice Forwards a message to a target contract, preserving the original sender.
+     * @notice This should only be used if the forwarder requires a signature.
+     * @notice In the case the app signer is not set, use the overloaded `forwardCall` function without a signature variable.
+     *
+     * @dev    - Throws if the target contract reverts.
+     * @dev    - Throws if the target address has no code.
+     * @dev    - Throws if `signer` is not address(0) and the signature does not match the signer.
      *
      * @param target    The address of the contract to forward the message to.
      * @param message   The calldata to forward.
@@ -94,69 +142,17 @@ contract TrustedForwarder is EIP712, Initializable, Ownable {
             returnData := mload(0x40)
             mstore(returnData, size)
             mstore(0x40, add(add(returnData, 0x20), size)) // Adjust memory pointer
-            returndatacopy(add(returnData, 0x20), 0, size)
+            returndatacopy(add(returnData, 0x20), 0, size) // Copy returndata to memory
 
             if iszero(success) {
-                // Revert with return data on failure
-                revert(add(returnData, 0x20), size)
+                revert(add(returnData, 0x20), size) // Revert with return data on failure
             }
 
             // If the call was successful, but the return data is empty, check if the target address has code
             if iszero(size) {
                 if iszero(extcodesize(target)) {
-                    // Store function selector `TrustedForwarder__TargetAddressHasNoCode()` and revert
-                    mstore(0x00, 0x39bf07c1)
-                    revert(0x1c, 0x04)
-                }
-            }
-        }
-    }
-
-    
-    /**
-     * @notice Overload of forwardCall that does not require a signature.
-     * @notice You should use this in the case that the forwarder does not require a signature to save gas.
-     *
-     * @dev    - Throws if the target contract reverts.
-     * @dev    - Throws if the target address has no code.
-     * @dev    - Throws if `appSignerEnabled` is true and the signed message does not
-     *
-     * @param target    The address of the contract to forward the message to.
-     * @param message   The calldata to forward.
-     *
-     * @return returnData The return data of the call to the target contract.
-     */
-    function forwardCall(address target, bytes calldata message)
-        external
-        payable
-        returns (bytes memory returnData)
-    {
-        address signerCache = signer;
-        if (signerCache != address(0)) {
-            revert TrustedForwarder__CannotUseWithoutSignature();
-        }
-
-        bytes memory encodedData = _encodeERC2771Context(message, _msgSender());
-        assembly {
-            let success := call(gas(), target, callvalue(), add(encodedData, 0x20), mload(encodedData), 0, 0)
-            let size := returndatasize()
-
-            returnData := mload(0x40)
-            mstore(returnData, size)
-            mstore(0x40, add(add(returnData, 0x20), size)) // Adjust memory pointer
-            returndatacopy(add(returnData, 0x20), 0, size)
-
-            if iszero(success) {
-                // Revert with return data on failure
-                revert(add(returnData, 0x20), size)
-            }
-
-            // If the call was successful, but the return data is empty, check if the target address has code
-            if iszero(size) {
-                if iszero(extcodesize(target)) {
-                    // Store function selector `TrustedForwarder__TargetAddressHasNoCode()` and revert
-                    mstore(0x00, 0x39bf07c1)
-                    revert(0x1c, 0x04)
+                    mstore(0x00, 0x39bf07c1) // Store function selector `TrustedForwarder__TargetAddressHasNoCode()` and revert
+                    revert(0x1c, 0x04) // Revert with the custom function selector
                 }
             }
         }
@@ -170,6 +166,9 @@ contract TrustedForwarder is EIP712, Initializable, Ownable {
      * @param signer_ The address to assign the app signer role to.
      */
     function updateSigner(address signer_) external onlyOwner {
+        if (signer_ == address(0)) {
+            revert TrustedForwarder__CannotSetAppSignerToZeroAddress();
+        }
         signer = signer_;
     }
 
@@ -224,11 +223,5 @@ contract TrustedForwarder is EIP712, Initializable, Ownable {
         if (recoveredSigner == address(0)) {
             revert TrustedForwarder__InvalidSignature();
         }
-    }
-
-    /// @dev Override OpenZeppelin's implementation to allow for the owner to be address(0)
-    ///      We do this to remove the requirement for more advanced initializer logic
-    function renounceOwnership() public override onlyOwner {
-        _transferOwnership(address(0xdead));
     }
 }

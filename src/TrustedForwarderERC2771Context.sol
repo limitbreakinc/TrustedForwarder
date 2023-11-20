@@ -21,10 +21,9 @@ abstract contract TrustedForwarderERC2771Context is Context {
      * @notice Returns true if the sender is a trusted forwarder, false otherwise.
      *
      * @dev    This function is required by ERC2771Context.
-     * @dev    This function is virtual to allow for overriding in child contracts.
      *
      * @param forwarder The address to check.
-     * @return True if the sender is a trusted forwarder, false otherwise.
+     * @return True if the provided address is a trusted forwarder, false otherwise.
      */
     function isTrustedForwarder(address forwarder) public view virtual returns (bool) {
         return _factory.isTrustedForwarder(forwarder);
@@ -49,7 +48,6 @@ abstract contract TrustedForwarderERC2771Context is Context {
     function _msgData() internal view virtual override returns (bytes calldata data) {
         if (_factory.isTrustedForwarder(msg.sender)) {
             assembly {
-                // Get length of current calldata
                 let len := calldatasize()
                 // Create a slice that defaults to the entire calldata
                 data.offset := 0

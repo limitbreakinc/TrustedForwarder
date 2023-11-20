@@ -26,7 +26,7 @@ contract BenchmarkTrustedForwarderWithSigner is BaseTest {
         mockReceiver = new MockReceiverContract(address(factory));
     }
 
-    function testForwardCallWithSigner_base(address sender) public {
+    function testForwardCallWithSigner_signerEnabled(address sender) public {
         vm.assume(sender != address(this) && sender != address(0));
 
         bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithRevert.selector, sender);
