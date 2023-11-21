@@ -11,8 +11,7 @@ out/
 docs/
 
 # Dotenv file
-.env
-
+.env*
 
 # Coverage
 coverage/
