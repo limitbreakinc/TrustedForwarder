@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.9.3) (metatx/ERC2771Context.sol)
-pragma solidity <=0.8.9;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "./TrustedForwarderFactory.sol";

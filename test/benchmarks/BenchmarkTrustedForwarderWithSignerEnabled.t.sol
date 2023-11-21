@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity <=0.8.9;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
 
 import {BaseTest} from "../TestBase.t.sol";
 import {TrustedForwarderFactory} from "src/TrustedForwarderFactory.sol"; 
