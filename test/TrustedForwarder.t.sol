@@ -722,4 +722,40 @@ contract TrustedForwarderTest is BaseTest {
         vm.expectRevert("MockReceiverContract__SenderDoesNotMatch");
         TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(v, r, s));
     }
+
+    function testForwardCall_WithMsgValue_DestinationOverflows() public {
+        vm.deal(address(this), 1 ether);
+        bytes memory message = abi.encodeWithSelector(mockReceiver.panicFromOverflow_Payable.selector);
+
+        vm.expectRevert();
+        TrustedForwarder(forwarder).forwardCall{value: 1 ether}(address(mockReceiver), message);
+
+        assertEq(address(mockReceiver).balance, 0 ether);
+        assertEq(address(this).balance, 1 ether);
+    }
+
+    function testForwardCall_WithoutMsgValue_DestinationOverflows() public {
+        bytes memory message = abi.encodeWithSelector(mockReceiver.panicFromOverflow.selector);
+
+        vm.expectRevert();
+        TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message);
+    }
+
+    function testForwardCall_WithMsgValue_RevertFromAssert() public {
+        vm.deal(address(this), 1 ether);
+        bytes memory message = abi.encodeWithSelector(mockReceiver.revertFromAssert_Payable.selector);
+
+        vm.expectRevert();
+        TrustedForwarder(forwarder).forwardCall{value: 1 ether}(address(mockReceiver), message);
+
+        assertEq(address(mockReceiver).balance, 0 ether);
+        assertEq(address(this).balance, 1 ether);
+    }
+
+    function testForwardCall_WithoutMsgValue_RevertFromAssert() public {
+        bytes memory message = abi.encodeWithSelector(mockReceiver.revertFromAssert.selector);
+
+        vm.expectRevert();
+        TrustedForwarder(forwarder).forwardCall(address(mockReceiver), message);
+    }
 }

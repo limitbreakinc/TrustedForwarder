@@ -38,6 +38,28 @@ contract MockReceiverContract is TrustedForwarderERC2771Context {
         }
     }
 
+    function panicFromOverflow() public pure returns (uint256) {
+        uint256 a = 1;
+        uint256 b = type(uint256).max;
+        uint256 c = a + b;
+        return c;
+    }
+
+    function panicFromOverflow_Payable() public payable returns (uint256) {
+        uint256 a = 1;
+        uint256 b = type(uint256).max;
+        uint256 c = a + b;
+        return c;
+    }
+
+    function revertFromAssert() public pure {
+        assert(false);
+    }
+
+    function revertFromAssert_Payable() public payable {
+        assert(false);
+    }
+
     function findTheSenderWithReturnValue(address expectedSender) external view returns (bool) {
         return _msgSender() == expectedSender;
     }
