@@ -3,7 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/Context.sol";
-import "./TrustedForwarderFactory.sol";
+import "./interfaces/ITrustedForwarderFactory.sol";
 
 /**
  * @title TrustedForwarderERC2771Context
@@ -11,10 +11,10 @@ import "./TrustedForwarderFactory.sol";
  * @notice Context variant that utilizes the TrustedForwarderFactory contract to determine if the sender is a trusted forwarder.
  */
 abstract contract TrustedForwarderERC2771Context is Context {
-    TrustedForwarderFactory private immutable _factory;
+    ITrustedForwarderFactory private immutable _factory;
 
     constructor(address factory) {
-        _factory = TrustedForwarderFactory(factory);
+        _factory = ITrustedForwarderFactory(factory);
     }
 
     /**
