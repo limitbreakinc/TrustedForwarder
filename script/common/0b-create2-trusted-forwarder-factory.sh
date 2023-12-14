@@ -25,12 +25,7 @@ fi
 
 address=$(cast abi-encode "signature(address)" $IMPLEMENTATION_ADDRESS)
 address=${address:2}
-echo $address
-
 factoryCode="$(forge inspect src/TrustedForwarderFactory.sol:TrustedForwarderFactory bytecode)"
-echo $factoryCode
-
 initCode="$factoryCode$address"
-echo $initCode
 
 cast create2 --starts-with 000000 --init-code $initCode

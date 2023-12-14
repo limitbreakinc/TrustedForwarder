@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin//contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";

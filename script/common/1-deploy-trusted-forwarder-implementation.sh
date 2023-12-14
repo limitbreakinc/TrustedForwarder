@@ -100,5 +100,4 @@ forge script script/common/DeployTrustedForwarderImplementation.s.sol:DeployTrus
   --gas-price $GAS_PRICE \
   --priority-gas-price $PRIORITY_GAS_PRICE \
   --rpc-url $RPC_URL \
-  --broadcast \
-  --slow
+  --broadcast
