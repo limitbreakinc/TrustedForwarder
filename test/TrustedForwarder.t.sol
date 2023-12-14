@@ -258,6 +258,33 @@ contract TrustedForwarderTest is BaseTest {
         assertEq(keccak256(decodedVal), keccak256(message));
     }
 
+    function testForwardCall_WithoutMsgValue_ReturnOneWordValue_WithSigner_injectedAddress(address sender, address badActor) public {
+        vm.assume(badActor != address(this));
+        vm.assume(badActor != sender);
+        bytes memory message = abi.encodeWithSelector(mockReceiver.getTheDataBytesReturn.selector);
+        message = abi.encodePacked(message, badActor);
+
+        forwarder.updateSigner(signer);
+
+        bytes32 digest = ECDSA.toTypedDataHash(
+            forwarder.domainSeparatorV4(),
+            keccak256(
+                abi.encode(
+                    forwarder.APP_SIGNER_TYPEHASH(),
+                    keccak256(message),
+                    address(mockReceiver),
+                    sender
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerKey, digest);
+
+        vm.prank(sender);
+        bytes memory retVal = forwarder.forwardCall(address(mockReceiver), message, TrustedForwarder.SignatureECDSA(v, r, s));
+        bytes memory decodedVal = abi.decode(retVal, (bytes));
+        assertEq(keccak256(decodedVal), keccak256(message));
+    }
+
     // ===================== SINGLE VARIABLE TYPED RETURNS =====================
     function testForwardCall_WithMsgValue_ReturnsSingleTypedVariable(bytes memory payload) public {
         vm.deal(address(this), 2 ether);
@@ -504,6 +531,21 @@ contract TrustedForwarderTest is BaseTest {
     function testForwardCall_WithMsgValue_DestinationConfirmsSenderAppendedToCallData(address sender) public {
         vm.deal(sender, 1 ether);
         bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithReturnValue_Payable.selector, sender);
+
+        vm.prank(sender);
+        bytes memory retVal = TrustedForwarder(forwarder).forwardCall{value: 1 ether}(address(mockReceiver), message);
+        bool decodedVal = abi.decode(retVal, (bool));
+        assertEq(decodedVal, true);
+
+        assertEq(address(mockReceiver).balance, 1 ether);
+    }
+
+    function testForwardCall_WithMsgValue_DestinationConfirmsSenderAppendedToCallData_injectedSender(address sender, address badActor) public {
+        vm.assume(badActor != address(this));
+        vm.assume(badActor != sender);
+        vm.deal(sender, 1 ether);
+        bytes memory message = abi.encodeWithSelector(mockReceiver.findTheSenderWithReturnValue_Payable.selector, sender);
+        message = abi.encodePacked(message, badActor);
 
         vm.prank(sender);
         bytes memory retVal = TrustedForwarder(forwarder).forwardCall{value: 1 ether}(address(mockReceiver), message);

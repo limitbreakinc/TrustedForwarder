@@ -7,7 +7,7 @@ contract TrustedForwarderFactory {
 
     error TrustedForwarderFactory__TrustedForwarderInitFailed(address admin, address appSigner);
 
-    event TrustedForwarderCreated(address indexed trustedForwarder);
+    event TrustedForwarderCreated(address indexed creator, address indexed trustedForwarder);
 
     // keccak256("__TrustedForwarder_init(address,address)")
     bytes4 constant private INIT_SELECTOR = 0x81ab13d7;
@@ -54,6 +54,6 @@ contract TrustedForwarderFactory {
         }
         forwarders[trustedForwarder] = true;
 
-        emit TrustedForwarderCreated(trustedForwarder);
+        emit TrustedForwarderCreated(msg.sender, trustedForwarder);
     }
 }

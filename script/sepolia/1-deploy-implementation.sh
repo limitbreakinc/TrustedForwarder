@@ -24,6 +24,8 @@ echo "============= DEPLOYING FORWARDER IMPLEMENTATION ============="
 echo "Deployer Key: ${PRIVATE_KEY}"
 echo "Deployer Address: ${PUBLIC_KEY}"
 echo "RPC: ${RPC_URL}"
+echo "gas price: ${GAS_PRICE} ${gasPrice}"
+echo "priority gas price: ${PRIORITY_GAS_PRICE} ${priorityGasPrice}"
 read -p "Do you want to proceed? (yes/no) " yn
 
 case $yn in 
