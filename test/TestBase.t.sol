@@ -11,7 +11,7 @@ import {MockReceiverContract} from "./mocks/MockReceiverContract.sol";
 
 contract BaseTest is TestBase, StdAssertions, StdCheats, StdUtils {
 
-    event TrustedForwarderCreated(address indexed trustedForwarder);
+    event TrustedForwarderCreated(address indexed creator, address indexed trustedForwarder);
 
     TrustedForwarderFactory public factory;
     address public forwarderImplementation;

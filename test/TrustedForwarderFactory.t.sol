@@ -38,7 +38,7 @@ contract TrustedForwarderFactoryTest is BaseTest {
             predicted := keccak256(add(ptr, 0x43), 0x55)
         }
         vm.expectEmit(true, true, true, true);
-        emit TrustedForwarderCreated(predicted);
+        emit TrustedForwarderCreated(address(this), predicted);
         factory.cloneTrustedForwarder(address(this), address(this), salt);
     }
 
