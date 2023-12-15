@@ -28,4 +28,4 @@ address=${address:2}
 factoryCode="$(forge inspect src/TrustedForwarderFactory.sol:TrustedForwarderFactory bytecode)"
 initCode="$factoryCode$address"
 
-cast create2 --starts-with 000000 --init-code $initCode
+cast create2 --starts-with 6ABE00 --init-code $initCode
