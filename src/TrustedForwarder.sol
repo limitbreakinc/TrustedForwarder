@@ -173,6 +173,15 @@ contract TrustedForwarder is EIP712, Initializable, Ownable {
     }
 
     /**
+     * @notice Resets the app signer address to address(0).
+     *
+     * @dev    - Throws if the sender is not the owner.
+     */
+     function deactivateSigner() external onlyOwner {
+        signer = address(0);
+    }
+
+    /**
      * @notice Returns the domain separator used in the permit signature
      *
      * @return The domain separator
