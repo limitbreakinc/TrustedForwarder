@@ -142,4 +142,5 @@ forge script script/common/DeployTrustedForwarderFactory.s.sol:DeployTrustedForw
   --priority-gas-price $PRIORITY_GAS_PRICE \
   --rpc-url $RPC_URL \
   --broadcast \
+  --optimizer-runs 1000000 \
   --verify $RESUME
