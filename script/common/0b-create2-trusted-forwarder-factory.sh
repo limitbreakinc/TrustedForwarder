@@ -1,31 +1,19 @@
 #!/bin/bash
-
-# Initialize variables
-IMPLEMENTATION_ADDRESS=""
-
-# Function to display usage
-usage() {
-    echo "Usage: $0 --implementation-address <trusted forwarder implementation address>"
+if [ -f .env.common ]
+then
+  export $(cat .env.common | xargs) 
+else
+    echo "Please set your .env.common file"
     exit 1
-}
-
-# Process arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --implementation-address) IMPLEMENTATION_ADDRESS=$2; shift ;;
-        *) usage ;;
-    esac
-    shift
-done
-
-# Check if all parameters are set
-if [ -z "$IMPLEMENTATION_ADDRESS" ]; then
-    usage
 fi
 
-address=$(cast abi-encode "signature(address)" $IMPLEMENTATION_ADDRESS)
-address=${address:2}
-factoryCode="$(forge inspect src/TrustedForwarderFactory.sol:TrustedForwarderFactory bytecode)"
-initCode="$factoryCode$address"
+implementationAddress=$(cast abi-encode "signature(address)" $EXPECTED_TRUSTED_FORWARDER_IMPLEMENTATION_ADDRESS)
+implementationAddress=${implementationAddress:2}
 
-cast create2 --starts-with 6ABE00 --init-code $initCode
+echo "create2 TrustedForwarderFactory START"
+trustedForwarderFactoryCode="$(forge inspect src/TrustedForwarderFactory.sol:TrustedForwarderFactory bytecode)"
+trustedForwarderFactoryInitCode="$trustedForwarderFactoryCode$implementationAddress"
+cast create2 --starts-with 6ABE00 --case-sensitive --init-code $trustedForwarderFactoryInitCode
+echo "create2 TrustedForwarderFactory END"
+echo "-------------------------------------"
+echo ""
