@@ -29,10 +29,21 @@ contract TrustedForwarderTest is BaseTest {
         vm.expectRevert("Ownable: caller is not the owner");
         forwarder.updateSigner(signer);
     }
+    function testDeactivateSigner_NonOwner(address badActor) public {
+        vm.assume(badActor != forwarder.owner());
+        vm.prank(badActor);
+        vm.expectRevert("Ownable: caller is not the owner");
+        forwarder.deactivateSigner();
+    }
 
     function testUpdateSigner_ZeroAddress() public {
         vm.expectRevert(TrustedForwarder.TrustedForwarder__CannotSetAppSignerToZeroAddress.selector);
         forwarder.updateSigner(address(0));
+    }
+
+    function testDeactivateSigner() public {
+        forwarder.deactivateSigner();
+        assertEq(forwarder.signer(), address(0));
     }
 
     function testTransferOwnership_NonOwner(address badActor) public {
