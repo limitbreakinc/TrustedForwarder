@@ -13,7 +13,7 @@ implementationAddress=${implementationAddress:2}
 echo "create2 TrustedForwarderFactory START"
 trustedForwarderFactoryCode="$(forge inspect src/TrustedForwarderFactory.sol:TrustedForwarderFactory bytecode)"
 trustedForwarderFactoryInitCode="$trustedForwarderFactoryCode$implementationAddress"
-cast create2 --starts-with 6ABE00 --case-sensitive --init-code $trustedForwarderFactoryInitCode
+cast create2 --starts-with FF0000 --case-sensitive --init-code $trustedForwarderFactoryInitCode
 echo "create2 TrustedForwarderFactory END"
 echo "-------------------------------------"
 echo ""
